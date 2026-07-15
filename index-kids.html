@@ -85,6 +85,12 @@
     content:"";position:absolute;left:-8px;bottom:14px;
     border:8px solid transparent;border-right-color:#fff;
   }
+  .voice-hint{
+    background:rgba(255,255,255,.85);
+    border-radius:14px;padding:10px 14px;
+    font-size:13px;font-weight:600;color:var(--muted);
+    text-align:center;margin:-8px 0 18px;
+  }
 
   /* Map view */
   .islands{
@@ -120,10 +126,25 @@
     box-shadow:0 4px 0 rgba(0,0,0,.08);
   }
   .game-title{font-weight:800;font-size:19px;color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.12);flex:1;}
+  .phase-label{
+    text-align:center;font-weight:800;font-size:15px;color:#fff;
+    text-shadow:0 2px 0 rgba(0,0,0,.12);margin-bottom:10px;
+  }
   .progress-dots{display:flex;gap:6px;justify-content:center;margin-bottom:18px;}
   .dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.55);}
   .dot.done{background:var(--leaf);}
   .dot.current{background:var(--sun);}
+
+  .sr-reveal{margin-top:14px;}
+  .sr-word{font-size:32px;font-weight:800;color:var(--coral-2);}
+  .sr-pron{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:15px;color:var(--muted);margin-top:4px;}
+  .say-big{
+    display:block;margin:18px auto 0;
+    background:var(--sun);border:none;border-radius:20px;
+    padding:14px 24px;font-size:17px;font-weight:800;color:var(--ink);
+    box-shadow:0 5px 0 var(--sun-2);cursor:pointer;
+  }
+  .say-big:active{transform:translateY(3px);box-shadow:0 2px 0 var(--sun-2);}
 
   .question-card{
     background:var(--card);
@@ -201,6 +222,8 @@
     <div class="bubble" id="mascotText">Привет! Я Стэфан. Идём искать сербские слова на островах!</div>
   </div>
 
+  <div class="voice-hint hidden" id="voiceHint">🔇 На этом устройстве нет сербского голоса — картинки и слова всё равно работают. Чтобы включить озвучку, установите сербский голос в настройках компьютера или телефона.</div>
+
   <div id="mapView">
     <div class="islands" id="islandsGrid"></div>
   </div>
@@ -210,9 +233,23 @@
       <button class="back-btn" id="backBtn" aria-label="Назад к карте">←</button>
       <div class="game-title" id="islandTitle">Остров</div>
     </div>
+    <div class="phase-label" id="phaseLabel">📖 Учим слова</div>
     <div class="progress-dots" id="progressDots"></div>
 
-    <div id="questionScreen">
+    <div id="learnScreen">
+      <div class="question-card">
+        <div class="big-emoji" id="learnEmoji">🐶</div>
+        <div class="ru-word" id="learnRu">Собака</div>
+        <div class="sr-reveal">
+          <div class="sr-word" id="learnSr">Pas</div>
+          <div class="sr-pron" id="learnPron">[пас]</div>
+        </div>
+        <button class="say-big" id="learnSpeakBtn">🔊 Послушать</button>
+      </div>
+      <button class="next-btn" id="learnNextBtn" style="display:block;">Дальше →</button>
+    </div>
+
+    <div id="questionScreen" class="hidden">
       <div class="question-card">
         <div class="big-emoji" id="bigEmoji">🐶</div>
         <div class="ru-word" id="ruWord">Собака</div>
@@ -364,16 +401,26 @@ function pickVoice(){
   }
   return null;
 }
+let voiceHintShown = false;
+function showVoiceHint(){
+  if(voiceHintShown) return;
+  voiceHintShown = true;
+  const hint = document.getElementById("voiceHint");
+  if(hint) hint.classList.remove("hidden");
+}
+
 function speak(text){
-  if(!speechOK) return;
+  if(!speechOK) { showVoiceHint(); return; }
+  const voice = pickVoice();
+  if(!voice){ showVoiceHint(); return; }
   try{
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
-    const voice = pickVoice();
-    if(voice){ u.voice = voice; u.lang = voice.lang; } else { u.lang = "sr-RS"; }
+    u.voice = voice;
+    u.lang = voice.lang;
     u.rate = 0.8;
     window.speechSynthesis.speak(u);
-  }catch(e){ speechOK = false; }
+  }catch(e){ speechOK = false; showVoiceHint(); }
 }
 
 function saveProgress(){
@@ -389,6 +436,7 @@ function isUnlocked(index){
 }
 
 let currentIslandIndex = -1;
+let phase = "learn";
 let wordOrder = [];
 let wordIdx = 0;
 let correctCount = 0;
@@ -432,8 +480,7 @@ function renderMap(){
 function openIsland(index){
   currentIslandIndex = index;
   const island = ISLANDS[index];
-  wordOrder = island.words.map((w, i) => i);
-  wordOrder.sort(() => Math.random() - 0.5);
+  phase = "learn";
   wordIdx = 0;
   correctCount = 0;
 
@@ -441,9 +488,46 @@ function openIsland(index){
   document.getElementById("islandView").classList.remove("hidden");
   document.getElementById("islandTitle").textContent = island.title;
   document.getElementById("completeScreen").classList.add("hidden");
-  document.getElementById("questionScreen").classList.remove("hidden");
-  setMascot("Остров «" + island.title + "»! Выбери правильное слово.");
+  document.getElementById("learnScreen").classList.remove("hidden");
+  document.getElementById("questionScreen").classList.add("hidden");
+  document.getElementById("phaseLabel").textContent = "📖 Учим слова";
+  setMascot("Остров «" + island.title + "»! Смотри и слушай новые слова.");
+  showLearnCard();
+}
+
+function showLearnCard(){
+  const island = ISLANDS[currentIslandIndex];
+  const word = island.words[wordIdx];
+  document.getElementById("learnEmoji").textContent = word.icon;
+  document.getElementById("learnRu").textContent = word.ru;
+  document.getElementById("learnSr").textContent = word.sr;
+  document.getElementById("learnPron").textContent = "[" + word.pron + "]";
   renderDots();
+  speak(word.sr);
+}
+
+function nextLearnCard(){
+  wordIdx++;
+  const island = ISLANDS[currentIslandIndex];
+  if(wordIdx >= island.words.length){
+    startQuizPhase();
+  }else{
+    showLearnCard();
+  }
+}
+
+function startQuizPhase(){
+  const island = ISLANDS[currentIslandIndex];
+  phase = "quiz";
+  wordOrder = island.words.map((w, i) => i);
+  wordOrder.sort(() => Math.random() - 0.5);
+  wordIdx = 0;
+  correctCount = 0;
+
+  document.getElementById("learnScreen").classList.add("hidden");
+  document.getElementById("questionScreen").classList.remove("hidden");
+  document.getElementById("phaseLabel").textContent = "🎯 Проверка";
+  setMascot("Отлично! Теперь проверим, что ты запомнил!");
   showQuestion();
 }
 
@@ -546,6 +630,11 @@ function finishIsland(){
 document.getElementById("backBtn").addEventListener("click", renderMap);
 document.getElementById("homeBtn").addEventListener("click", renderMap);
 document.getElementById("nextBtn").addEventListener("click", nextQuestion);
+document.getElementById("learnNextBtn").addEventListener("click", nextLearnCard);
+document.getElementById("learnSpeakBtn").addEventListener("click", () => {
+  const island = ISLANDS[currentIslandIndex];
+  if(island) speak(island.words[wordIdx].sr);
+});
 
 try{ renderMap(); }catch(e){}
 </script>
