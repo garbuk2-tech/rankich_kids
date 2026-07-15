@@ -587,14 +587,21 @@ function answerQuestion(el, chosen, correctSr){
     correctCount++;
     setMascot(randomFrom(MASCOT_CORRECT));
     speak(correctSr);
+    document.getElementById("nextBtn").style.display = "none";
+    const islandAtAnswer = currentIslandIndex;
+    setTimeout(() => {
+      if(currentIslandIndex === islandAtAnswer && phase === "quiz" && answered){
+        nextQuestion();
+      }
+    }, 900);
   }else{
     el.classList.add("wrong");
     document.querySelectorAll("#optionsBox .opt").forEach(o => {
       if(o.dataset.sr === correctSr) o.classList.add("correct");
     });
     setMascot(randomFrom(MASCOT_WRONG));
+    document.getElementById("nextBtn").style.display = "block";
   }
-  document.getElementById("nextBtn").style.display = "block";
 }
 
 function nextQuestion(){
