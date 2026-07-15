@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Zdravo Kids — острова сербских слов</title>
+<style>
+  :root{
+    --sky-top:#5EC6FF;
+    --sky-bottom:#BFEBFF;
+    --sun:#FFCB3D;
+    --sun-2:#FFA53D;
+    --leaf:#4CB56D;
+    --leaf-2:#2F9E52;
+    --coral:#FF6F59;
+    --coral-2:#F0503B;
+    --ink:#2B2350;
+    --muted:#6B6389;
+    --card:#FFFFFF;
+    --sand:#FFF7E3;
+    --line:#E6DFF5;
+    --radius:28px;
+    --round-font:ui-rounded,"SF Pro Rounded",-apple-system,BlinkMacSystemFont,"Segoe UI",Verdana,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    font-family:var(--round-font);
+    color:var(--ink);
+    background:
+      radial-gradient(circle at 85% 8%, #FFFFFF 0 6%, transparent 7%),
+      linear-gradient(180deg, var(--sky-top) 0%, var(--sky-bottom) 65%, #EFFBEA 100%);
+    min-height:100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:.001ms !important; transition-duration:.001ms !important;}
+  }
+  button{font-family:inherit;}
+  .wrap{max-width:640px;margin:0 auto;padding:18px 16px 40px;}
+  :focus-visible{outline:3px solid var(--coral);outline-offset:2px;}
+
+  /* Top bar */
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    margin-bottom:14px;
+  }
+  .brand{
+    display:flex;align-items:center;gap:8px;
+    font-weight:800;font-size:20px;color:#fff;
+    text-shadow:0 2px 0 rgba(0,0,0,.12);
+  }
+  .stars-total{
+    display:flex;align-items:center;gap:6px;
+    background:#fff;border-radius:999px;padding:8px 16px;
+    font-weight:800;font-size:15px;color:var(--sun-2);
+    box-shadow:0 4px 0 rgba(0,0,0,.08);
+  }
+
+  /* Mascot bubble */
+  .mascot-row{display:flex;align-items:flex-end;gap:10px;margin:10px 0 18px;}
+  .mascot{font-size:52px;line-height:1;filter:drop-shadow(0 4px 3px rgba(0,0,0,.15));}
+  .bubble{
+    background:#fff;border-radius:20px;padding:12px 16px;
+    font-size:15px;font-weight:700;color:var(--ink);
+    box-shadow:0 4px 0 rgba(0,0,0,.06);
+    position:relative;
+    flex:1;
+  }
+  .bubble::before{
+    content:"";position:absolute;left:-8px;bottom:14px;
+    border:8px solid transparent;border-right-color:#fff;
+  }
+
+  /* Map view */
+  .islands{
+    display:grid;grid-template-columns:1fr 1fr;gap:16px;
+  }
+  @media (max-width:420px){.islands{grid-template-columns:1fr;}}
+  .island-card{
+    background:var(--card);
+    border-radius:var(--radius);
+    padding:20px 16px;
+    text-align:center;
+    box-shadow:0 6px 0 rgba(0,0,0,.08);
+    border:none;
+    cursor:pointer;
+    position:relative;
+    transition:transform .12s ease;
+  }
+  .island-card:active{transform:translateY(3px);}
+  .island-card .emoji{font-size:48px;display:block;margin-bottom:8px;}
+  .island-card .name{font-weight:800;font-size:17px;margin-bottom:6px;}
+  .island-card .stars{font-size:16px;letter-spacing:2px;color:var(--sun-2);}
+  .island-card.locked{opacity:.55;cursor:default;}
+  .island-card.locked .emoji{filter:grayscale(1);}
+  .lock-badge{
+    position:absolute;top:10px;right:10px;font-size:20px;
+  }
+
+  /* Island (game) view */
+  .game-head{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+  .back-btn{
+    background:#fff;border:none;border-radius:999px;
+    width:42px;height:42px;font-size:20px;cursor:pointer;
+    box-shadow:0 4px 0 rgba(0,0,0,.08);
+  }
+  .game-title{font-weight:800;font-size:19px;color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.12);flex:1;}
+  .progress-dots{display:flex;gap:6px;justify-content:center;margin-bottom:18px;}
+  .dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.55);}
+  .dot.done{background:var(--leaf);}
+  .dot.current{background:var(--sun);}
+
+  .question-card{
+    background:var(--card);
+    border-radius:var(--radius);
+    padding:28px 20px;
+    text-align:center;
+    box-shadow:0 6px 0 rgba(0,0,0,.08);
+    margin-bottom:18px;
+  }
+  .big-emoji{font-size:88px;line-height:1;margin-bottom:10px;}
+  .ru-word{font-size:24px;font-weight:800;color:var(--ink);}
+
+  .options{display:grid;grid-template-columns:1fr;gap:12px;}
+  .opt{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    background:#fff;border:none;border-radius:20px;
+    padding:16px 18px;
+    font-size:19px;font-weight:800;color:var(--ink);
+    box-shadow:0 5px 0 rgba(0,0,0,.08);
+    cursor:pointer;
+    text-align:left;
+  }
+  .opt:active{transform:translateY(3px);box-shadow:0 2px 0 rgba(0,0,0,.08);}
+  .opt .pron{font-size:12px;font-weight:600;color:var(--muted);display:block;margin-top:2px;}
+  .opt .say{
+    flex:none;width:38px;height:38px;border-radius:50%;
+    background:var(--sand);border:none;font-size:16px;cursor:pointer;
+  }
+  .opt.correct{background:var(--leaf);color:#fff;}
+  .opt.correct .pron{color:#EFFFE9;}
+  .opt.wrong{background:var(--coral);color:#fff;}
+  .opt.wrong .pron{color:#FFE9E4;}
+
+  .feedback{
+    text-align:center;font-size:18px;font-weight:800;margin:14px 0;min-height:26px;
+  }
+  .next-btn{
+    display:block;width:100%;
+    background:var(--coral);color:#fff;border:none;border-radius:20px;
+    padding:16px;font-size:18px;font-weight:800;cursor:pointer;
+    box-shadow:0 5px 0 var(--coral-2);
+    display:none;
+  }
+  .next-btn:active{transform:translateY(3px);box-shadow:0 2px 0 var(--coral-2);}
+
+  /* Completion screen */
+  .complete-card{
+    background:var(--card);border-radius:var(--radius);
+    padding:32px 22px;text-align:center;
+    box-shadow:0 6px 0 rgba(0,0,0,.08);
+  }
+  .complete-card .big-emoji{font-size:72px;}
+  .complete-card h2{font-size:24px;margin:10px 0;}
+  .complete-stars{font-size:40px;letter-spacing:8px;color:var(--sun-2);margin:10px 0 18px;}
+  .home-btn{
+    background:var(--leaf);color:#fff;border:none;border-radius:20px;
+    padding:16px 28px;font-size:17px;font-weight:800;cursor:pointer;
+    box-shadow:0 5px 0 var(--leaf-2);
+  }
+  .home-btn:active{transform:translateY(3px);box-shadow:0 2px 0 var(--leaf-2);}
+
+  .hidden{display:none !important;}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">🏝️ Zdravo Kids</div>
+    <div class="stars-total">⭐ <span id="totalStars">0</span> / <span id="maxStars">0</span></div>
+  </div>
+
+  <div class="mascot-row">
+    <div class="mascot">🐉</div>
+    <div class="bubble" id="mascotText">Привет! Я Змай. Идём искать сербские слова на островах!</div>
+  </div>
+
+  <div id="mapView">
+    <div class="islands" id="islandsGrid"></div>
+  </div>
+
+  <div id="islandView" class="hidden">
+    <div class="game-head">
+      <button class="back-btn" id="backBtn" aria-label="Назад к карте">←</button>
+      <div class="game-title" id="islandTitle">Остров</div>
+    </div>
+    <div class="progress-dots" id="progressDots"></div>
+
+    <div id="questionScreen">
+      <div class="question-card">
+        <div class="big-emoji" id="bigEmoji">🐶</div>
+        <div class="ru-word" id="ruWord">Собака</div>
+      </div>
+      <div class="options" id="optionsBox"></div>
+      <div class="feedback" id="feedback"></div>
+      <button class="next-btn" id="nextBtn">Дальше →</button>
+    </div>
+
+    <div id="completeScreen" class="hidden">
+      <div class="complete-card">
+        <div class="big-emoji">🎉</div>
+        <h2>Остров пройден!</h2>
+        <div class="complete-stars" id="completeStars">⭐⭐⭐</div>
+        <button class="home-btn" id="homeBtn">К карте островов</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const ISLANDS = [
+  {
+    id: "animals", title: "Остров зверей", emoji: "🐾",
+    words: [
+      {ru:"Собака", sr:"Pas", pron:"пас", icon:"🐶"},
+      {ru:"Кошка", sr:"Mačka", pron:"мачка", icon:"🐱"},
+      {ru:"Птица", sr:"Ptica", pron:"птица", icon:"🐦"},
+      {ru:"Рыба", sr:"Riba", pron:"риба", icon:"🐟"},
+      {ru:"Лошадь", sr:"Konj", pron:"конь", icon:"🐴"},
+      {ru:"Корова", sr:"Krava", pron:"крава", icon:"🐄"},
+      {ru:"Медведь", sr:"Medved", pron:"медвед", icon:"🐻"},
+      {ru:"Заяц", sr:"Zec", pron:"зец", icon:"🐰"},
+      {ru:"Лиса", sr:"Lisica", pron:"лисица", icon:"🦊"},
+      {ru:"Свинья", sr:"Svinja", pron:"свиня", icon:"🐷"},
+    ]
+  },
+  {
+    id: "colors", title: "Остров красок", emoji: "🎨",
+    words: [
+      {ru:"Красный", sr:"Crven", pron:"црвен", icon:"🔴"},
+      {ru:"Синий", sr:"Plav", pron:"плав", icon:"🔵"},
+      {ru:"Зелёный", sr:"Zelen", pron:"зелен", icon:"🟢"},
+      {ru:"Жёлтый", sr:"Žut", pron:"жут", icon:"🟡"},
+      {ru:"Чёрный", sr:"Crn", pron:"црн", icon:"⚫"},
+      {ru:"Белый", sr:"Beo", pron:"бео", icon:"⚪"},
+      {ru:"Оранжевый", sr:"Narandžast", pron:"народжаст", icon:"🟠"},
+      {ru:"Фиолетовый", sr:"Ljubičast", pron:"любичаст", icon:"🟣"},
+    ]
+  },
+  {
+    id: "numbers", title: "Остров чисел", emoji: "🔢",
+    words: [
+      {ru:"Один", sr:"Jedan", pron:"едан", icon:"1️⃣"},
+      {ru:"Два", sr:"Dva", pron:"два", icon:"2️⃣"},
+      {ru:"Три", sr:"Tri", pron:"три", icon:"3️⃣"},
+      {ru:"Четыре", sr:"Četiri", pron:"четыри", icon:"4️⃣"},
+      {ru:"Пять", sr:"Pet", pron:"пет", icon:"5️⃣"},
+      {ru:"Шесть", sr:"Šest", pron:"шест", icon:"6️⃣"},
+      {ru:"Семь", sr:"Sedam", pron:"седам", icon:"7️⃣"},
+      {ru:"Восемь", sr:"Osam", pron:"осам", icon:"8️⃣"},
+      {ru:"Девять", sr:"Devet", pron:"девет", icon:"9️⃣"},
+      {ru:"Десять", sr:"Deset", pron:"десет", icon:"🔟"},
+    ]
+  },
+  {
+    id: "food", title: "Остров вкусностей", emoji: "🍎",
+    words: [
+      {ru:"Яблоко", sr:"Jabuka", pron:"ябука", icon:"🍎"},
+      {ru:"Банан", sr:"Banana", pron:"банана", icon:"🍌"},
+      {ru:"Хлеб", sr:"Hleb", pron:"хлеб", icon:"🍞"},
+      {ru:"Молоко", sr:"Mleko", pron:"млеко", icon:"🥛"},
+      {ru:"Сыр", sr:"Sir", pron:"сир", icon:"🧀"},
+      {ru:"Мороженое", sr:"Sladoled", pron:"сладолед", icon:"🍦"},
+      {ru:"Торт", sr:"Torta", pron:"торта", icon:"🎂"},
+      {ru:"Шоколад", sr:"Čokolada", pron:"чоколада", icon:"🍫"},
+    ]
+  },
+  {
+    id: "family", title: "Остров семьи", emoji: "👪",
+    words: [
+      {ru:"Мама", sr:"Mama", pron:"мама", icon:"👩"},
+      {ru:"Папа", sr:"Tata", pron:"тата", icon:"👨"},
+      {ru:"Брат", sr:"Brat", pron:"брат", icon:"👦"},
+      {ru:"Сестра", sr:"Sestra", pron:"сестра", icon:"👧"},
+      {ru:"Бабушка", sr:"Baka", pron:"бака", icon:"👵"},
+      {ru:"Дедушка", sr:"Deda", pron:"деда", icon:"👴"},
+    ]
+  },
+  {
+    id: "greet", title: "Остров привета", emoji: "👋",
+    words: [
+      {ru:"Привет!", sr:"Zdravo!", pron:"здраво", icon:"👋"},
+      {ru:"Спасибо!", sr:"Hvala!", pron:"хвала", icon:"🙏"},
+      {ru:"Пока!", sr:"Ćao!", pron:"чао", icon:"👋"},
+      {ru:"Да", sr:"Da", pron:"да", icon:"✅"},
+      {ru:"Нет", sr:"Ne", pron:"не", icon:"❌"},
+      {ru:"Молодец!", sr:"Bravo!", pron:"браво", icon:"🌟"},
+    ]
+  },
+];
+
+const MASCOT_IDLE = "Привет! Я Змай. Идём искать сербские слова на островах!";
+const MASCOT_CORRECT = ["Супер! 🎉", "Точно! Молодец!", "Так держать!", "Ты знаешь сербский!", "Отлично!"];
+const MASCOT_WRONG = ["Почти! Попробуй ещё раз в следующий раз.", "Не страшно, идём дальше!", "Запомним это слово!"];
+
+const STORAGE_KEY = "zdravo_kids_progress";
+let storageOK = true;
+let memoryStore = {};
+function lsGet(key){
+  try{ return window.localStorage.getItem(key); }
+  catch(e){ storageOK = false; return memoryStore.hasOwnProperty(key) ? memoryStore[key] : null; }
+}
+function lsSet(key, value){
+  try{ window.localStorage.setItem(key, value); }
+  catch(e){ storageOK = false; memoryStore[key] = value; }
+}
+
+let progress;
+try{
+  progress = JSON.parse(lsGet(STORAGE_KEY) || "{}");
+}catch(e){
+  progress = {};
+}
+
+let cachedVoices = [];
+let speechOK = true;
+function loadVoices(){
+  try{ cachedVoices = window.speechSynthesis.getVoices(); }
+  catch(e){ speechOK = false; }
+}
+try{
+  if("speechSynthesis" in window){
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+  } else { speechOK = false; }
+}catch(e){ speechOK = false; }
+
+function pickVoice(){
+  const priority = ["sr-rs","sr-latn-rs","sr","hr-hr","hr","bs-ba","bs"];
+  for(const lang of priority){
+    const exact = cachedVoices.find(v => v.lang.toLowerCase() === lang);
+    if(exact) return exact;
+  }
+  for(const lang of priority){
+    const prefix = lang.split("-")[0];
+    const starts = cachedVoices.find(v => v.lang.toLowerCase().startsWith(prefix));
+    if(starts) return starts;
+  }
+  return null;
+}
+function speak(text){
+  if(!speechOK) return;
+  try{
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    const voice = pickVoice();
+    if(voice){ u.voice = voice; u.lang = voice.lang; } else { u.lang = "sr-RS"; }
+    u.rate = 0.8;
+    window.speechSynthesis.speak(u);
+  }catch(e){ speechOK = false; }
+}
+
+function saveProgress(){
+  lsSet(STORAGE_KEY, JSON.stringify(progress));
+}
+
+function starsFor(islandId){
+  return (progress[islandId] && progress[islandId].stars) || 0;
+}
+function isUnlocked(index){
+  if(index === 0) return true;
+  return starsFor(ISLANDS[index-1].id) > 0;
+}
+
+let currentIslandIndex = -1;
+let wordOrder = [];
+let wordIdx = 0;
+let correctCount = 0;
+let answered = false;
+
+function setMascot(text){
+  document.getElementById("mascotText").textContent = text;
+}
+function randomFrom(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+function renderMap(){
+  document.getElementById("islandView").classList.add("hidden");
+  document.getElementById("mapView").classList.remove("hidden");
+  setMascot(MASCOT_IDLE);
+
+  let total = 0, max = 0;
+  const grid = document.getElementById("islandsGrid");
+  grid.innerHTML = "";
+  ISLANDS.forEach((island, i) => {
+    max += 3;
+    const stars = starsFor(island.id);
+    total += stars;
+    const unlocked = isUnlocked(i);
+    const card = document.createElement("button");
+    card.className = "island-card" + (unlocked ? "" : " locked");
+    card.innerHTML = `
+      ${unlocked ? "" : '<span class="lock-badge">🔒</span>'}
+      <span class="emoji">${island.emoji}</span>
+      <div class="name">${island.title}</div>
+      <div class="stars">${"⭐".repeat(stars)}${"☆".repeat(3-stars)}</div>
+    `;
+    if(unlocked){
+      card.onclick = () => openIsland(i);
+    }
+    grid.appendChild(card);
+  });
+  document.getElementById("totalStars").textContent = total;
+  document.getElementById("maxStars").textContent = max;
+}
+
+function openIsland(index){
+  currentIslandIndex = index;
+  const island = ISLANDS[index];
+  wordOrder = island.words.map((w, i) => i);
+  wordOrder.sort(() => Math.random() - 0.5);
+  wordIdx = 0;
+  correctCount = 0;
+
+  document.getElementById("mapView").classList.add("hidden");
+  document.getElementById("islandView").classList.remove("hidden");
+  document.getElementById("islandTitle").textContent = island.title;
+  document.getElementById("completeScreen").classList.add("hidden");
+  document.getElementById("questionScreen").classList.remove("hidden");
+  setMascot("Остров «" + island.title + "»! Выбери правильное слово.");
+  renderDots();
+  showQuestion();
+}
+
+function renderDots(){
+  const island = ISLANDS[currentIslandIndex];
+  const dots = document.getElementById("progressDots");
+  dots.innerHTML = "";
+  island.words.forEach((_, i) => {
+    const d = document.createElement("div");
+    d.className = "dot" + (i < wordIdx ? " done" : (i === wordIdx ? " current" : ""));
+    dots.appendChild(d);
+  });
+}
+
+function showQuestion(){
+  answered = false;
+  const island = ISLANDS[currentIslandIndex];
+  const word = island.words[wordOrder[wordIdx]];
+
+  document.getElementById("bigEmoji").textContent = word.icon;
+  document.getElementById("ruWord").textContent = word.ru;
+  document.getElementById("feedback").textContent = "";
+  document.getElementById("nextBtn").style.display = "none";
+  renderDots();
+
+  let pool = island.words.filter((w, i) => i !== wordOrder[wordIdx]);
+  pool.sort(() => Math.random() - 0.5);
+  const wrong = pool.slice(0, Math.min(2, pool.length));
+  const options = [word, ...wrong].sort(() => Math.random() - 0.5);
+
+  const box = document.getElementById("optionsBox");
+  box.innerHTML = "";
+  options.forEach(opt => {
+    const b = document.createElement("button");
+    b.className = "opt";
+    b.dataset.sr = opt.sr;
+    b.innerHTML = `
+      <span><span>${opt.sr}</span><span class="pron">[${opt.pron}]</span></span>
+      <span class="say" aria-label="Слушать">🔊</span>
+    `;
+    b.querySelector(".say").addEventListener("click", (e) => {
+      e.stopPropagation();
+      speak(opt.sr);
+    });
+    b.addEventListener("click", () => {
+      if(answered) return;
+      answerQuestion(b, opt.sr, word.sr);
+    });
+    box.appendChild(b);
+  });
+}
+
+function answerQuestion(el, chosen, correctSr){
+  answered = true;
+  if(chosen === correctSr){
+    el.classList.add("correct");
+    correctCount++;
+    setMascot(randomFrom(MASCOT_CORRECT));
+    speak(correctSr);
+  }else{
+    el.classList.add("wrong");
+    document.querySelectorAll("#optionsBox .opt").forEach(o => {
+      if(o.dataset.sr === correctSr) o.classList.add("correct");
+    });
+    setMascot(randomFrom(MASCOT_WRONG));
+  }
+  document.getElementById("nextBtn").style.display = "block";
+}
+
+function nextQuestion(){
+  wordIdx++;
+  const island = ISLANDS[currentIslandIndex];
+  if(wordIdx >= island.words.length){
+    finishIsland();
+  }else{
+    showQuestion();
+  }
+}
+
+function finishIsland(){
+  const island = ISLANDS[currentIslandIndex];
+  const total = island.words.length;
+  let stars = 1;
+  if(correctCount === total) stars = 3;
+  else if(correctCount >= Math.ceil(total*0.6)) stars = 2;
+
+  const prevStars = starsFor(island.id);
+  if(stars > prevStars){
+    progress[island.id] = { stars: stars };
+    saveProgress();
+  }
+
+  document.getElementById("questionScreen").classList.add("hidden");
+  document.getElementById("completeScreen").classList.remove("hidden");
+  document.getElementById("completeStars").textContent =
+    "⭐".repeat(Math.max(stars, prevStars)) + "☆".repeat(3 - Math.max(stars, prevStars));
+  setMascot("Ты собрал все слова острова «" + island.title + "»!");
+}
+
+document.getElementById("backBtn").addEventListener("click", renderMap);
+document.getElementById("homeBtn").addEventListener("click", renderMap);
+document.getElementById("nextBtn").addEventListener("click", nextQuestion);
+
+try{ renderMap(); }catch(e){}
+</script>
+
+</body>
+</html>
