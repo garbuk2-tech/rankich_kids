@@ -582,26 +582,28 @@ function showQuestion(){
 
 function answerQuestion(el, chosen, correctSr){
   answered = true;
+  document.getElementById("nextBtn").style.display = "none";
+  const islandAtAnswer = currentIslandIndex;
+  let delay = 1000;
   if(chosen === correctSr){
     el.classList.add("correct");
     correctCount++;
     setMascot(randomFrom(MASCOT_CORRECT));
     speak(correctSr);
-    document.getElementById("nextBtn").style.display = "none";
-    const islandAtAnswer = currentIslandIndex;
-    setTimeout(() => {
-      if(currentIslandIndex === islandAtAnswer && phase === "quiz" && answered){
-        nextQuestion();
-      }
-    }, 900);
   }else{
     el.classList.add("wrong");
     document.querySelectorAll("#optionsBox .opt").forEach(o => {
       if(o.dataset.sr === correctSr) o.classList.add("correct");
     });
     setMascot(randomFrom(MASCOT_WRONG));
-    document.getElementById("nextBtn").style.display = "block";
+    speak(correctSr);
+    delay = 2000;
   }
+  setTimeout(() => {
+    if(currentIslandIndex === islandAtAnswer && phase === "quiz" && answered){
+      nextQuestion();
+    }
+  }, delay);
 }
 
 function nextQuestion(){
