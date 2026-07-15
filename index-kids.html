@@ -350,6 +350,65 @@ const ISLANDS = [
       {ru:"Молодец!", sr:"Bravo!", pron:"браво", icon:"🌟"},
     ]
   },
+  {
+    id: "clothes", title: "Остров одежды", emoji: "👕",
+    words: [
+      {ru:"Рубашка", sr:"Košulja", pron:"кошуля", icon:"👔"},
+      {ru:"Штаны", sr:"Pantalone", pron:"панталоне", icon:"👖"},
+      {ru:"Платье", sr:"Haljina", pron:"халина", icon:"👗"},
+      {ru:"Куртка", sr:"Jakna", pron:"якна", icon:"🧥"},
+      {ru:"Шапка", sr:"Kapa", pron:"капа", icon:"🧢"},
+      {ru:"Носки", sr:"Čarape", pron:"чарапе", icon:"🧦"},
+      {ru:"Ботинки", sr:"Čizme", pron:"чизме", icon:"👢"},
+      {ru:"Перчатки", sr:"Rukavice", pron:"рукавице", icon:"🧤"},
+    ]
+  },
+  {
+    id: "weather", title: "Остров погоды", emoji: "⛅",
+    words: [
+      {ru:"Солнце", sr:"Sunce", pron:"сунце", icon:"☀️"},
+      {ru:"Дождь", sr:"Kiša", pron:"киша", icon:"🌧️"},
+      {ru:"Снег", sr:"Sneg", pron:"снег", icon:"❄️"},
+      {ru:"Ветер", sr:"Vetar", pron:"ветар", icon:"💨"},
+      {ru:"Облако", sr:"Oblak", pron:"облак", icon:"☁️"},
+      {ru:"Радуга", sr:"Duga", pron:"дуга", icon:"🌈"},
+    ]
+  },
+  {
+    id: "home", title: "Остров дома", emoji: "🏠",
+    words: [
+      {ru:"Дом", sr:"Kuća", pron:"куча", icon:"🏠"},
+      {ru:"Дверь", sr:"Vrata", pron:"врата", icon:"🚪"},
+      {ru:"Окно", sr:"Prozor", pron:"прозор", icon:"🪟"},
+      {ru:"Кровать", sr:"Krevet", pron:"кревет", icon:"🛏️"},
+      {ru:"Стул", sr:"Stolica", pron:"столица", icon:"🪑"},
+      {ru:"Ключ", sr:"Ključ", pron:"ключ", icon:"🔑"},
+    ]
+  },
+  {
+    id: "phrases", title: "Остров словосочетаний", emoji: "🧩",
+    words: [
+      {ru:"Красная кошка", sr:"Crvena mačka", pron:"црвена мачка", icon:"🐱"},
+      {ru:"Большая собака", sr:"Veliki pas", pron:"велики пас", icon:"🐶"},
+      {ru:"Жёлтое солнце", sr:"Žuto sunce", pron:"жуто сунце", icon:"☀️"},
+      {ru:"Синее небо", sr:"Plavo nebo", pron:"плаво небо", icon:"🔵"},
+      {ru:"Сладкое яблоко", sr:"Slatka jabuka", pron:"слатка ябука", icon:"🍎"},
+      {ru:"Тёплый дом", sr:"Topla kuća", pron:"топла куча", icon:"🏠"},
+      {ru:"Белый снег", sr:"Beli sneg", pron:"бели снег", icon:"❄️"},
+      {ru:"Новая куртка", sr:"Nova jakna", pron:"нова якна", icon:"🧥"},
+    ]
+  },
+  {
+    id: "sentences", title: "Остров предложений", emoji: "💬",
+    words: [
+      {ru:"Собака большая", sr:"Pas je veliki", pron:"пас е велики", icon:"🐶"},
+      {ru:"Кошка маленькая", sr:"Mačka je mala", pron:"мачка е мала", icon:"🐱"},
+      {ru:"Солнце жёлтое", sr:"Sunce je žuto", pron:"сунце е жуто", icon:"☀️"},
+      {ru:"Снег белый", sr:"Sneg je beo", pron:"снег е бео", icon:"❄️"},
+      {ru:"Дом тёплый", sr:"Kuća je topla", pron:"куча е топла", icon:"🏠"},
+      {ru:"Яблоко сладкое", sr:"Jabuka je slatka", pron:"ябука е слатка", icon:"🍎"},
+    ]
+  },
 ];
 
 const MASCOT_IDLE = "Привет! Я Стэфан. Идём искать сербские слова на островах!";
@@ -366,6 +425,22 @@ function lsGet(key){
 function lsSet(key, value){
   try{ window.localStorage.setItem(key, value); }
   catch(e){ storageOK = false; memoryStore[key] = value; }
+}
+
+const STREAK_KEY = "zdravo_kids_streak";
+function updateStreak(){
+  const today = new Date().toDateString();
+  let data;
+  try{ data = JSON.parse(lsGet(STREAK_KEY) || "null"); }catch(e){ data = null; }
+  if(!data || typeof data.count !== "number") data = { count: 0, lastDate: null };
+  if(data.lastDate !== today){
+    const yesterday = new Date(Date.now() - 86400000).toDateString();
+    data.count = (data.lastDate === yesterday) ? data.count + 1 : 1;
+    data.lastDate = today;
+    lsSet(STREAK_KEY, JSON.stringify(data));
+  }
+  const pill = document.getElementById("streakPill");
+  if(pill) pill.textContent = "🔥 " + data.count;
 }
 
 let progress;
